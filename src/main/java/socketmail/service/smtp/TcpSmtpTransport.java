@@ -1,5 +1,8 @@
 package socketmail.service.smtp;
 
+import socketmail.model.vo.Host;
+import socketmail.model.vo.Port;
+
 import javax.net.ssl.SSLSocketFactory;
 import java.io.*;
 import java.net.Socket;
@@ -11,18 +14,18 @@ public class TcpSmtpTransport implements SmtpTransport {
     private BufferedReader reader;
 
     @Override
-    public void connect(String host, int port) throws IOException {
-        socket = new Socket(host, port);
+    public void connect(Host host, Port port) throws IOException {
+        socket = new Socket(host.value(), port.value());
         socket.setSoTimeout(5000);
         writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.US_ASCII));
         reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.US_ASCII));
-        System.out.println("Connected to " + host + ":" + port);
+        System.out.println("Connected to " + host.value() + ":" + port.value());
     }
 
     @Override
-    public void startTls(String host, int port) throws IOException {
+    public void startTls(Host host, Port port) throws IOException {
         SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-        socket = factory.createSocket(socket, host, port, true);
+        socket = factory.createSocket(socket, host.value(), port.value(), true);
         writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.US_ASCII));
         reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.US_ASCII));
     }
