@@ -1,7 +1,7 @@
 package socketmail.service.smtp;
 
 import socketmail.exception.SmtpException;
-import socketmail.model.Email;
+import socketmail.model.EmailForm;
 import socketmail.model.SmtpResponse;
 import socketmail.model.config.SmtpConfig;
 import java.io.IOException;
@@ -20,7 +20,7 @@ public class SmtpSession implements AutoCloseable {
         this.parser = parser;
     }
 
-    public void send(Email email) throws IOException {
+    public void send(EmailForm email) throws IOException {
         connect();
         handshake();
         startTls();
@@ -64,7 +64,7 @@ public class SmtpSession implements AutoCloseable {
                 FAILED_MESSAGE_FORMAT.formatted("Password"));
     }
 
-    private void sendMessage(Email email) throws IOException {
+    private void sendMessage(EmailForm email) throws IOException {
         writeCommand(SmtpCommand.MAIL_FROM.toString() + ": <" + email.from().value() + ">");
         checkResponse(parser.read(transport), SmtpStatusCode.OK,
                 FAILED_MESSAGE_FORMAT.formatted(SmtpCommand.MAIL_FROM.toString()));
@@ -79,9 +79,9 @@ public class SmtpSession implements AutoCloseable {
 
         writeCommand("From: " + email.from().value());
         writeCommand("To: " + email.to().value());
-        writeCommand("Subject: " + email.subject());
+        writeCommand("Subject: " + email.subject().value());
         writeCommand("");
-        writeCommand(email.body());
+        writeCommand(email.body().value());
         writeCommand("."); // End of data
 
         String step = "Email content sending";

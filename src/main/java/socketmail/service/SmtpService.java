@@ -1,6 +1,6 @@
 package socketmail.service;
 
-import socketmail.model.Email;
+import socketmail.model.EmailForm;
 import socketmail.model.config.SmtpConfig;
 import socketmail.model.vo.EmailAddress;
 import socketmail.model.vo.Host;
@@ -18,17 +18,17 @@ public class SmtpService {
     private final SmtpConfig config;
 
     public SmtpService() {
-        this.config = new SmtpConfig(
-                new Host(ConfigManager.getProperty("mail.smtp.host")),
+        this.config = new SmtpConfig(new Host(ConfigManager.getProperty("mail.smtp.host")),
                 new Port(Integer.parseInt(ConfigManager.getProperty("mail.smtp.port"))),
                 new EmailAddress(ConfigManager.getProperty("mail.smtp.user")),
-                new Password(ConfigManager.getProperty("mail.smtp.pass"))
-        );
+                new Password(ConfigManager.getProperty("mail.smtp.pass")));
     }
 
-    public void send(Email email) throws IOException {
-        try (SmtpSession session = new SmtpSession(config, new TcpSmtpTransport(), new DefaultSmtpParser())) {
+    public void send(EmailForm email) throws IOException {
+        try (SmtpSession session =
+                new SmtpSession(config, new TcpSmtpTransport(), new DefaultSmtpParser())) {
             session.send(email);
         }
     }
+
 }
