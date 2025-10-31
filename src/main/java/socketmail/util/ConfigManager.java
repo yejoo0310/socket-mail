@@ -1,4 +1,4 @@
-package socketmail;
+package socketmail.util;
 
 import java.io.FileInputStream;
 import java.io.IOException;
