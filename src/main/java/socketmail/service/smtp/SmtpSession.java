@@ -13,8 +13,7 @@ public class SmtpSession implements AutoCloseable {
     private final SmtpTransport transport;
     private final SmtpParser parser;
 
-    private final String CRLF = "\r\n";
-    private final String FAILED_MESSAGE_FORMMAT = "%s failed";
+    private static final String FAILED_MESSAGE_FORMAT = "%s failed";
 
     public SmtpSession(SmtpConfig config, SmtpTransport transport, SmtpParser parser) {
         this.config = config;
@@ -34,71 +33,79 @@ public class SmtpSession implements AutoCloseable {
 
     private void connect() throws IOException {
         transport.connect(config.host(), config.port());
-        String command = "CONNECTION";
-        checkResponse(parser.read(transport), 220, FAILED_MESSAGE_FORMMAT.formatted(command));
+        String step = "CONNECTION";
+        checkResponse(parser.read(transport), SmtpStatusCode.SERVICE_READY,
+                FAILED_MESSAGE_FORMAT.formatted(step));
     }
 
     private void handshake() throws IOException {
-        String command = "EHLO";
-        writeCommand(command + " " + config.host().value());
-        checkResponse(parser.read(transport), 250, FAILED_MESSAGE_FORMMAT.formatted(command));
+        writeCommand(SmtpCommand.EHLO.toString() + " " + config.host().value());
+        checkResponse(parser.read(transport), SmtpStatusCode.OK,
+                FAILED_MESSAGE_FORMAT.formatted(SmtpCommand.EHLO.toString()));
     }
 
     private void startTls() throws IOException {
-        writeCommand("STARTTLS");
-        checkResponse(parser.read(transport), 220, "STARTTLS failed");
+        writeCommand(SmtpCommand.STARTTLS.toString());
+        checkResponse(parser.read(transport), SmtpStatusCode.SERVICE_READY,
+                FAILED_MESSAGE_FORMAT.formatted(SmtpCommand.STARTTLS.toString()));
         transport.startTls(config.host(), config.port());
     }
 
     private void authenticate() throws IOException {
-        writeCommand("AUTH LOGIN");
-        checkResponse(parser.read(transport), 334, "AUTH LOGIN failed");
+        writeCommand(SmtpCommand.AUTH_LOGIN.toString());
+        checkResponse(parser.read(transport), SmtpStatusCode.AUTH_CONTINUE,
+                FAILED_MESSAGE_FORMAT.formatted(SmtpCommand.AUTH_LOGIN.toString()));
 
         String userBase64 =
                 Base64.getEncoder().encodeToString(config.username().value().getBytes());
         writeCommand(userBase64);
-        checkResponse(parser.read(transport), 334, "Username failed");
+        checkResponse(parser.read(transport), SmtpStatusCode.AUTH_CONTINUE,
+                FAILED_MESSAGE_FORMAT.formatted("Username"));
 
         String passBase64 =
                 Base64.getEncoder().encodeToString(config.password().value().getBytes());
         writeCommand(passBase64);
-        checkResponse(parser.read(transport), 235, "Password failed");
+        checkResponse(parser.read(transport), SmtpStatusCode.AUTH_SUCCESS,
+                FAILED_MESSAGE_FORMAT.formatted("Password"));
     }
 
     private void sendMessage(Email email) throws IOException {
-        writeCommand("MAIL FROM: <" + email.from().value() + ">");
-        checkResponse(parser.read(transport), 250, "MAIL FROM failed");
+        writeCommand(SmtpCommand.MAIL_FROM.toString() + ": <" + email.from().value() + ">");
+        checkResponse(parser.read(transport), SmtpStatusCode.OK,
+                FAILED_MESSAGE_FORMAT.formatted(SmtpCommand.MAIL_FROM.toString()));
 
-        writeCommand("RCPT TO: <" + email.to().value() + ">");
-        checkResponse(parser.read(transport), 250, "RCPT TO failed");
+        writeCommand(SmtpCommand.RCPT_TO.toString() + ": <" + email.to().value() + ">");
+        checkResponse(parser.read(transport), SmtpStatusCode.OK,
+                FAILED_MESSAGE_FORMAT.formatted(SmtpCommand.RCPT_TO.toString()));
 
-        writeCommand("DATA");
-        checkResponse(parser.read(transport), 354, "DATA failed");
+        writeCommand(SmtpCommand.DATA.toString());
+        checkResponse(parser.read(transport), SmtpStatusCode.START_MAIL_INPUT,
+                FAILED_MESSAGE_FORMAT.formatted(SmtpCommand.DATA.toString()));
 
         writeCommand("From: " + email.from().value());
         writeCommand("To: " + email.to().value());
         writeCommand("Subject: " + email.subject());
         writeCommand("");
         writeCommand(email.body());
-        writeCommand(".");
-        checkResponse(parser.read(transport), 250, "Email content sending failed");
+        writeCommand("."); // End of data
+
+        String step = "Email content sending";
+        checkResponse(parser.read(transport), SmtpStatusCode.OK,
+                FAILED_MESSAGE_FORMAT.formatted(step));
     }
 
     private void quit() throws IOException {
-        writeCommand("QUIT");
-        parser.read(transport); // 응답은 확인하지 않아도 무방
+        writeCommand(SmtpCommand.QUIT.toString());
+        parser.read(transport);
     }
 
-    // 유틸리티 메소드
     private void writeCommand(String line) throws IOException {
-        // TODO: 여기에 로깅을 추가하면 디버깅에 유용합니다.
         transport.writeLine(line);
     }
 
-    // DRY 원칙: 응답 코드 검증 로직을 헬퍼 메소드로 분리
-    private void checkResponse(SmtpResponse response, int expectedCode, String errorMessage)
-            throws SmtpException {
-        if (response.code() != expectedCode) {
+    private void checkResponse(SmtpResponse response, SmtpStatusCode expectedCode,
+            String errorMessage) throws SmtpException {
+        if (response.code() != expectedCode.getCode()) {
             throw new SmtpException(errorMessage, response);
         }
     }
