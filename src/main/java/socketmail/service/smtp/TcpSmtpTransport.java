@@ -1,4 +1,4 @@
-package socketmail;
+package socketmail.service.smtp;
 
 import javax.net.ssl.SSLSocketFactory;
 import java.io.*;

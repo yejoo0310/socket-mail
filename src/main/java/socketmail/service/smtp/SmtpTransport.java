@@ -1,4 +1,4 @@
-package socketmail;
+package socketmail.service.smtp;
 
 import java.io.IOException;
 

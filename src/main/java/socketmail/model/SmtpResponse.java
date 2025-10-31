@@ -1,4 +1,4 @@
-package socketmail;
+package socketmail.model;
 
 import java.util.List;
 
