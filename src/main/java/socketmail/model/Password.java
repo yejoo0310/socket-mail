@@ -1,4 +1,4 @@
-package socketmail.model.vo;
+package socketmail.model;
 
 import java.util.Base64;
 

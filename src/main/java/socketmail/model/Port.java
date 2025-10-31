@@ -1,4 +1,4 @@
-package socketmail.model.vo;
+package socketmail.model;
 
 public record Port(int value) {
     public Port {

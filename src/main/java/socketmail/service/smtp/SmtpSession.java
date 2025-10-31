@@ -3,7 +3,6 @@ package socketmail.service.smtp;
 import socketmail.exception.SmtpException;
 import socketmail.model.EmailForm;
 import socketmail.model.SmtpResponse;
-import socketmail.model.config.SmtpConfig;
 import java.io.IOException;
 
 public class SmtpSession implements AutoCloseable {
@@ -65,11 +64,14 @@ public class SmtpSession implements AutoCloseable {
     }
 
     private void sendMessage(EmailForm email) throws IOException {
-        writeCommand(SmtpCommand.MAIL_FROM.toString() + ": <" + email.from().value() + ">");
+        String fromAddress = email.from().value();
+        String toAddress = email.to().value();
+
+        writeCommand(SmtpCommand.MAIL_FROM.toString() + ": <" + fromAddress + ">");
         checkResponse(parser.read(transport), SmtpStatusCode.OK,
                 FAILED_MESSAGE_FORMAT.formatted(SmtpCommand.MAIL_FROM.toString()));
 
-        writeCommand(SmtpCommand.RCPT_TO.toString() + ": <" + email.to().value() + ">");
+        writeCommand(SmtpCommand.RCPT_TO.toString() + ": <" + toAddress + ">");
         checkResponse(parser.read(transport), SmtpStatusCode.OK,
                 FAILED_MESSAGE_FORMAT.formatted(SmtpCommand.RCPT_TO.toString()));
 
@@ -77,8 +79,8 @@ public class SmtpSession implements AutoCloseable {
         checkResponse(parser.read(transport), SmtpStatusCode.START_MAIL_INPUT,
                 FAILED_MESSAGE_FORMAT.formatted(SmtpCommand.DATA.toString()));
 
-        writeCommand("From: " + email.from().value());
-        writeCommand("To: " + email.to().value());
+        writeCommand("From: " + fromAddress);
+        writeCommand("To: " + toAddress);
         writeCommand("Subject: " + email.subject().value());
         writeCommand("");
         writeCommand(email.body().value());

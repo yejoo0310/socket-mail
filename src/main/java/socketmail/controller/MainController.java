@@ -1,9 +1,9 @@
 package socketmail.controller;
 
+import socketmail.model.Body;
+import socketmail.model.EmailAddress;
 import socketmail.model.EmailForm;
-import socketmail.model.vo.Body;
-import socketmail.model.vo.EmailAddress;
-import socketmail.model.vo.Subject;
+import socketmail.model.Subject;
 import socketmail.service.SmtpService;
 import socketmail.util.ConfigManager;
 import socketmail.view.MainView;

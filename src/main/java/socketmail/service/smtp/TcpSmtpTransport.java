@@ -1,9 +1,8 @@
 package socketmail.service.smtp;
 
-import socketmail.model.vo.Host;
-import socketmail.model.vo.Port;
-
 import javax.net.ssl.SSLSocketFactory;
+import socketmail.model.Host;
+import socketmail.model.Port;
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;

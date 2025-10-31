@@ -1,4 +1,4 @@
-package socketmail.model.vo;
+package socketmail.model;
 
 public record Host(String value) {
     public Host {

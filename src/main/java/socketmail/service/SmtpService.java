@@ -1,12 +1,12 @@
 package socketmail.service;
 
+import socketmail.model.EmailAddress;
 import socketmail.model.EmailForm;
-import socketmail.model.config.SmtpConfig;
-import socketmail.model.vo.EmailAddress;
-import socketmail.model.vo.Host;
-import socketmail.model.vo.Password;
-import socketmail.model.vo.Port;
+import socketmail.model.Host;
+import socketmail.model.Password;
+import socketmail.model.Port;
 import socketmail.service.smtp.DefaultSmtpParser;
+import socketmail.service.smtp.SmtpConfig;
 import socketmail.service.smtp.SmtpSession;
 import socketmail.service.smtp.TcpSmtpTransport;
 import socketmail.util.ConfigManager;

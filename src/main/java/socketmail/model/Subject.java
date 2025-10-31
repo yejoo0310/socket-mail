@@ -1,4 +1,4 @@
-package socketmail.model.vo;
+package socketmail.model;
 
 public record Subject(String value) {
     public Subject {
