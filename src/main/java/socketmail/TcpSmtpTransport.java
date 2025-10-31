@@ -30,6 +30,7 @@ public class TcpSmtpTransport implements SmtpTransport {
     @Override
     public void writeLine(String line) throws IOException {
         ensureConnected();
+        System.out.println("[CLIENT] >> " + line);
         writer.write(line);
         writer.write("\r\n");
         writer.flush();
@@ -37,7 +38,9 @@ public class TcpSmtpTransport implements SmtpTransport {
     @Override
     public String readLine() throws IOException {
         ensureConnected();
-        return reader.readLine();
+        String s = reader.readLine();
+        System.out.println("[SERVER] << " + s);
+        return s;
     }
     @Override
     public void close() throws IOException {

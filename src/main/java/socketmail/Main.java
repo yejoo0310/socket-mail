@@ -2,6 +2,7 @@ package socketmail;
 
 import java.io.*;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 public class Main {
@@ -26,14 +27,12 @@ public class Main {
 
         try{
             transport.connect(hostname, port);
-
             String line = transport.readLine();
-            System.out.println("connect: " + line);
             checkResponse(line, "220", "Connection Failed");
 
+            // EHLO: multi-line
             transport.writeLine("EHLO " + hostname);
             line = transport.readLine();
-            System.out.println("EHLO: " +  line);
             checkResponse(line, "250", "EHLO failed");
             while (line.length() >= 4 && line.charAt(3) == '-') {
                 line = transport.readLine();
@@ -42,15 +41,13 @@ public class Main {
 
             transport.writeLine("STARTTLS");
             line = transport.readLine();
-            System.out.println("STARTTLS: " +  line);
             checkResponse(line, "220", "STARTTLS failed");
-
             transport.startTls(hostname, port);
             System.out.println("TLS/SSL layer established");
 
+            // EHLO: multi-line
             transport.writeLine("EHLO " + hostname);
             line = transport.readLine();
-            System.out.println(line);
             checkResponse(line, "250", "second EHLO failed");
             while (line.length() >= 4 && line.charAt(3) == '-') {
                 line = transport.readLine();
@@ -61,12 +58,12 @@ public class Main {
             line = transport.readLine();
             checkResponse(line, "334", "AUTH LOGIN failed");
 
-            String encodedEmail = Base64.getEncoder().encodeToString(sender.getBytes());
+            String encodedEmail = Base64.getEncoder().encodeToString(sender.getBytes(StandardCharsets.US_ASCII));
             transport.writeLine(encodedEmail);
             line = transport.readLine();
             checkResponse(line, "334", "Username failed");
 
-            String encodedPassword = Base64.getEncoder().encodeToString(password.getBytes());
+            String encodedPassword = Base64.getEncoder().encodeToString(password.getBytes(StandardCharsets.US_ASCII));
             transport.writeLine(encodedPassword);
             line = transport.readLine();
             checkResponse(line, "235", "Password failed");
@@ -89,19 +86,24 @@ public class Main {
             transport.writeLine("From: <" + sender + ">");
             transport.writeLine("Subject: SMTP project");
             transport.writeLine("");
-            transport.writeLine(content);
-            transport.writeLine(".");
 
            for (String ln : content.split("\r?\n")) {
                 transport.writeLine(ln); // (dot-stuffing은 다음 단계에서 Composer로)
-            }
-            transport.writeLine(".");
-            checkResponse(transport.readLine(), "250", "DATA delivery failed");
+           }
+           transport.writeLine(".");
 
-            System.out.println("Email successfully sent!");
+           line = transport.readLine();
+           checkResponse(line, "250", "DATA delivery failed");
+           while (line.length() >= 4 && line.charAt(3) == '-') {
+               line = transport.readLine();
+               checkResponse(line, "250", "DATA delivery failed");
+           }
+
+           System.out.println("Email successfully sent!");
 
             transport.writeLine("QUIT");
-
+            line = transport.readLine();
+            checkResponse(line, "221", "QUIT failed");
         } catch (UnknownHostException e) {
             System.err.println("Unknown host: " + hostname);
         } catch (IOException e) {
@@ -118,32 +120,9 @@ public class Main {
         }
     }
 
-    private static String readResponse(BufferedReader reader) throws IOException {
-        String line = reader.readLine();
-        if (line != null) {
-            System.out.println("SERVER: " + line);
-        }
-        return line;
-    }
-
     private static void checkResponse(String response, String expectedCode, String errorMessage) throws Exception {
         if (response == null || !response.startsWith(expectedCode)) {
             throw new Exception(errorMessage + " - Response: " + response);
         }
-    }
-
-    private static String readFullResponse(BufferedReader reader) throws IOException {
-        StringBuilder fullResponse = new StringBuilder();
-        String line;
-        do {
-            line = reader.readLine();
-            if (line == null) {
-                throw new IOException("Connection closed by server unexpectedly.");
-            }
-            System.out.println("SERVER: " + line);
-            fullResponse.append(line).append("\n");
-        } while (line.length() >= 4 && line.charAt(3) == '-');
-
-        return fullResponse.substring(0, Math.min(3, fullResponse.length()));
     }
 }
