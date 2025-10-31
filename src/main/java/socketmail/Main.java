@@ -88,7 +88,7 @@ public class Main {
             transport.writeLine("");
 
            for (String ln : content.split("\r?\n")) {
-                transport.writeLine(ln); // (dot-stuffing은 다음 단계에서 Composer로)
+                transport.writeLine(ln);
            }
            transport.writeLine(".");
 
