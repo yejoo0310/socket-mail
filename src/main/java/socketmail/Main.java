@@ -70,8 +70,13 @@ public class Main {
             transport.writeLine("Subject: SMTP project");
             transport.writeLine("");
 
+            // rfc 5321 section 4.5.2
            for (String ln : content.split("\r?\n")) {
-                transport.writeLine(ln);
+                String lineToSend = ln;
+                if(lineToSend.startsWith(".")) {
+                    lineToSend = "." + lineToSend;
+                }
+                transport.writeLine(lineToSend);
            }
            transport.writeLine(".");
 
