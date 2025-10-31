@@ -17,6 +17,7 @@ public class Main {
         String receiver = ConfigManager.getProperty("smtp.receiver");
         String content = "I like hamburger and pizza.\n" +
                 "Please give me.";
+        String subject = "SMTP project";
 
         int port;
         try {
@@ -67,7 +68,7 @@ public class Main {
 
             transport.writeLine("To: <" + receiver + ">");
             transport.writeLine("From: <" + sender + ">");
-            transport.writeLine("Subject: SMTP project");
+            transport.writeLine("Subject: " + subject);
             transport.writeLine("");
 
             // rfc 5321 section 4.5.2
