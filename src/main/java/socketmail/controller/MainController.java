@@ -14,13 +14,11 @@ import java.awt.event.ActionListener;
 
 public class MainController {
     private final MainView view;
-    private final ConfigManager config;
     private final SmtpService smtpService;
 
     public MainController(MainView view, ConfigManager config) {
         this.view = view;
-        this.config = config;
-        this.smtpService = new SmtpService(); // SmtpService 인스턴스 생성
+        this.smtpService = new SmtpService();
 
         this.view.getSendButton().addActionListener(new SendEmailListener());
     }
@@ -32,12 +30,6 @@ public class MainController {
             String subject = view.getSubjectField().getText();
             String body = view.getBodyArea().getText();
             String from = ConfigManager.getProperty("mail.smtp.user");
-
-            if (to.isEmpty() || subject.isEmpty()) {
-                JOptionPane.showMessageDialog(view, "Recipient and Subject cannot be empty.",
-                        "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
 
             try {
                 EmailForm email = new EmailForm(new EmailAddress(from), new EmailAddress(to),
