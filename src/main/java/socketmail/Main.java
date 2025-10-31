@@ -7,6 +7,7 @@ import java.util.Base64;
 
 public class Main {
     static SmtpTransport transport = new TcpSmtpTransport();
+    static SmtpParser parser = new DefaultSmtpParser();
 
     public static void main(String[] args) {
         String hostname = ConfigManager.getProperty("smtp.host");
@@ -27,60 +28,42 @@ public class Main {
 
         try{
             transport.connect(hostname, port);
-            String line = transport.readLine();
-            checkResponse(line, "220", "Connection Failed");
+            checkResponse(parser.read(transport), 220, "Connection Failed");
 
             // EHLO: multi-line
             transport.writeLine("EHLO " + hostname);
-            line = transport.readLine();
-            checkResponse(line, "250", "EHLO failed");
-            while (line.length() >= 4 && line.charAt(3) == '-') {
-                line = transport.readLine();
-                checkResponse(line, "250", "EHLO failed");
-            }
+            checkResponse(parser.read(transport), 250, "EHLO failed");
 
             transport.writeLine("STARTTLS");
-            line = transport.readLine();
-            checkResponse(line, "220", "STARTTLS failed");
+            checkResponse(parser.read(transport), 220, "STARTTLS failed");
             transport.startTls(hostname, port);
             System.out.println("TLS/SSL layer established");
 
             // EHLO: multi-line
             transport.writeLine("EHLO " + hostname);
-            line = transport.readLine();
-            checkResponse(line, "250", "second EHLO failed");
-            while (line.length() >= 4 && line.charAt(3) == '-') {
-                line = transport.readLine();
-                checkResponse(line, "250", "EHLO failed");
-            }
+            checkResponse(parser.read(transport), 250, "EHLO failed");
 
             transport.writeLine("AUTH LOGIN");
-            line = transport.readLine();
-            checkResponse(line, "334", "AUTH LOGIN failed");
+            checkResponse(parser.read(transport), 334, "AUTH LOGIN failed");
 
             String encodedEmail = Base64.getEncoder().encodeToString(sender.getBytes(StandardCharsets.US_ASCII));
             transport.writeLine(encodedEmail);
-            line = transport.readLine();
-            checkResponse(line, "334", "Username failed");
+            checkResponse(parser.read(transport), 334, "Username failed");
 
             String encodedPassword = Base64.getEncoder().encodeToString(password.getBytes(StandardCharsets.US_ASCII));
             transport.writeLine(encodedPassword);
-            line = transport.readLine();
-            checkResponse(line, "235", "Password failed");
+            checkResponse(parser.read(transport), 235, "Password failed");
 
             System.out.println("Authentication successful.");
 
             transport.writeLine("MAIL FROM: <" + sender + ">");
-            line = transport.readLine();
-            checkResponse(line, "250", "MAIL FROM failed");
+            checkResponse(parser.read(transport), 250, "MAIL FROM failed");
 
             transport.writeLine("RCPT TO: <" + receiver + ">");
-            line = transport.readLine();
-            checkResponse(line, "250", "RCPT TO failed");
+            checkResponse(parser.read(transport), 250, "RCPT failed");
 
             transport.writeLine("DATA");
-            line = transport.readLine();
-            checkResponse(line, "354", "DATA command failed");
+            checkResponse(parser.read(transport), 354, "DATA command failed");
 
             transport.writeLine("To: <" + receiver + ">");
             transport.writeLine("From: <" + sender + ">");
@@ -92,18 +75,12 @@ public class Main {
            }
            transport.writeLine(".");
 
-           line = transport.readLine();
-           checkResponse(line, "250", "DATA delivery failed");
-           while (line.length() >= 4 && line.charAt(3) == '-') {
-               line = transport.readLine();
-               checkResponse(line, "250", "DATA delivery failed");
-           }
+           checkResponse(parser.read(transport), 250, "DATA delivery failed");
 
            System.out.println("Email successfully sent!");
 
             transport.writeLine("QUIT");
-            line = transport.readLine();
-            checkResponse(line, "221", "QUIT failed");
+            checkResponse(parser.read(transport), 221, "QUIT failed");
         } catch (UnknownHostException e) {
             System.err.println("Unknown host: " + hostname);
         } catch (IOException e) {
@@ -120,9 +97,13 @@ public class Main {
         }
     }
 
-    private static void checkResponse(String response, String expectedCode, String errorMessage) throws Exception {
-        if (response == null || !response.startsWith(expectedCode)) {
-            throw new Exception(errorMessage + " - Response: " + response);
+    private static void checkResponse(SmtpResponse response, int expectedCode, String errorMessage) throws Exception {
+        if (response == null || response.code() != expectedCode) {
+            if (response == null || response.lines().isEmpty()) {
+                throw new Exception(errorMessage + "-" + "null");
+            } else {
+                throw new Exception(errorMessage + "-" + response.lines().get(0));
+            }
         }
     }
 }
