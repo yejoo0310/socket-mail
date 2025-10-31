@@ -7,6 +7,8 @@ import java.net.UnknownHostException;
 import java.util.Base64;
 
 public class Main {
+    static SmtpTransport transport = new TcpSmtpTransport();
+
     public static void main(String[] args) {
         String hostname = ConfigManager.getProperty("smtp.host");
         String smtpPort = ConfigManager.getProperty("smtp.port");
@@ -29,24 +31,17 @@ public class Main {
         BufferedReader reader = null;
 
         try{
-            socket = new Socket(hostname, port);
-            System.out.println("Connected to " + hostname + ":" + port);
+            transport.connect(hostname, port);
 
-            InputStream input = socket.getInputStream();
-            OutputStream output = socket.getOutputStream();
-
-            writer = new PrintWriter(output, true);
-            reader = new BufferedReader(new InputStreamReader(input));
-
-            String line = readResponse(reader);
+            String line = transport.readLine();
             checkResponse(line, "220", "Connection Failed");
 
-            writer.println("EHLO " + hostname);
-            line = readFullResponse(reader);
+            transport.writeLine("EHLO " + hostname);
+            line = transport.readLine();
             checkResponse(line, "250", "EHLO failed");
 
-            writer.println("STARTTLS");
-            line = readResponse(reader);
+            transport.writeLine("STARTTLS");
+            line = transport.readLine();
             checkResponse(line, "220", "STARTTLS failed");
 
             SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
@@ -122,9 +117,7 @@ public class Main {
             System.err.println("Unknown exception: " + e.getMessage());
         } finally {
             try {
-                if (writer != null) writer.close();
-                if (reader != null) reader.close();
-                if (socket != null) socket.close();
+                transport.close();
                 System.out.println("Connection closed.");
             } catch (IOException e) {
                 System.err.println("Error closing resources: " + e.getMessage());
