@@ -1,12 +1,13 @@
 package socketmail;
 
-import javax.net.ssl.SSLSocketFactory;
 import java.io.*;
-import java.net.Socket;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 public class Main {
+    static SmtpTransport transport = new TcpSmtpTransport();
+
     public static void main(String[] args) {
         String hostname = ConfigManager.getProperty("smtp.host");
         String smtpPort = ConfigManager.getProperty("smtp.port");
@@ -24,96 +25,85 @@ public class Main {
             port = 587;
         }
 
-        Socket socket = null;
-        PrintWriter writer = null;
-        BufferedReader reader = null;
-
         try{
-            socket = new Socket(hostname, port);
-            System.out.println("Connected to " + hostname + ":" + port);
-
-            InputStream input = socket.getInputStream();
-            OutputStream output = socket.getOutputStream();
-
-            writer = new PrintWriter(output, true);
-            reader = new BufferedReader(new InputStreamReader(input));
-
-            String line = readResponse(reader);
+            transport.connect(hostname, port);
+            String line = transport.readLine();
             checkResponse(line, "220", "Connection Failed");
 
-            writer.println("EHLO " + hostname);
-            line = readFullResponse(reader);
+            // EHLO: multi-line
+            transport.writeLine("EHLO " + hostname);
+            line = transport.readLine();
             checkResponse(line, "250", "EHLO failed");
-
-            writer.println("STARTTLS");
-            line = readResponse(reader);
-            checkResponse(line, "220", "STARTTLS failed");
-
-            SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-            socket = factory.createSocket(socket, hostname, port, true);
-
-            input = socket.getInputStream();
-            output = socket.getOutputStream();
-            writer = new PrintWriter(output, true);
-            reader = new BufferedReader(new InputStreamReader(input));
-
-            System.out.println("TLS/SSL layer established");
-
-            writer.println("EHLO " + hostname);
-            line = readResponse(reader);
-            checkResponse(line, "250", "second EHLO failed");
-
-            try {
-                while (reader.ready()) {
-                    reader.readLine();
-                }
-            } catch (IOException ignored) {
+            while (line.length() >= 4 && line.charAt(3) == '-') {
+                line = transport.readLine();
+                checkResponse(line, "250", "EHLO failed");
             }
 
-            writer.println("AUTH LOGIN");
-            line = readResponse(reader);
+            transport.writeLine("STARTTLS");
+            line = transport.readLine();
+            checkResponse(line, "220", "STARTTLS failed");
+            transport.startTls(hostname, port);
+            System.out.println("TLS/SSL layer established");
+
+            // EHLO: multi-line
+            transport.writeLine("EHLO " + hostname);
+            line = transport.readLine();
+            checkResponse(line, "250", "second EHLO failed");
+            while (line.length() >= 4 && line.charAt(3) == '-') {
+                line = transport.readLine();
+                checkResponse(line, "250", "EHLO failed");
+            }
+
+            transport.writeLine("AUTH LOGIN");
+            line = transport.readLine();
             checkResponse(line, "334", "AUTH LOGIN failed");
 
-            String encodedEmail = Base64.getEncoder().encodeToString(sender.getBytes());
-            writer.println(encodedEmail);
-            line = readResponse(reader);
+            String encodedEmail = Base64.getEncoder().encodeToString(sender.getBytes(StandardCharsets.US_ASCII));
+            transport.writeLine(encodedEmail);
+            line = transport.readLine();
             checkResponse(line, "334", "Username failed");
 
-            String encodedPassword = Base64.getEncoder().encodeToString(password.getBytes());
-            writer.println(encodedPassword);
-            line = readResponse(reader);
+            String encodedPassword = Base64.getEncoder().encodeToString(password.getBytes(StandardCharsets.US_ASCII));
+            transport.writeLine(encodedPassword);
+            line = transport.readLine();
             checkResponse(line, "235", "Password failed");
 
             System.out.println("Authentication successful.");
 
-            writer.println("MAIL FROM: <" + sender + ">");
-            line = readResponse(reader);
+            transport.writeLine("MAIL FROM: <" + sender + ">");
+            line = transport.readLine();
             checkResponse(line, "250", "MAIL FROM failed");
 
-            writer.println("RCPT TO: <" + receiver + ">");
-            line = readResponse(reader);
+            transport.writeLine("RCPT TO: <" + receiver + ">");
+            line = transport.readLine();
             checkResponse(line, "250", "RCPT TO failed");
 
-            writer.println("DATA");
-            line = readResponse(reader);
-            System.out.println(line);
+            transport.writeLine("DATA");
+            line = transport.readLine();
             checkResponse(line, "354", "DATA command failed");
 
-            writer.write("To: <" + receiver + ">\r\n");
-            writer.write("From: <" + sender + ">\r\n");
-            writer.write("Subject: SMTP project\r\n");
-            writer.write("\r\n");
-            writer.write(content + "\r\n");
-            writer.write(".\r\n");
-            writer.flush();
+            transport.writeLine("To: <" + receiver + ">");
+            transport.writeLine("From: <" + sender + ">");
+            transport.writeLine("Subject: SMTP project");
+            transport.writeLine("");
 
-            line = readFullResponse(reader);
-            checkResponse(line, "250", "DATA delivery failed");
+           for (String ln : content.split("\r?\n")) {
+                transport.writeLine(ln);
+           }
+           transport.writeLine(".");
 
-            System.out.println("Email successfully sent!");
+           line = transport.readLine();
+           checkResponse(line, "250", "DATA delivery failed");
+           while (line.length() >= 4 && line.charAt(3) == '-') {
+               line = transport.readLine();
+               checkResponse(line, "250", "DATA delivery failed");
+           }
 
-            writer.println("quit");
+           System.out.println("Email successfully sent!");
 
+            transport.writeLine("QUIT");
+            line = transport.readLine();
+            checkResponse(line, "221", "QUIT failed");
         } catch (UnknownHostException e) {
             System.err.println("Unknown host: " + hostname);
         } catch (IOException e) {
@@ -122,9 +112,7 @@ public class Main {
             System.err.println("Unknown exception: " + e.getMessage());
         } finally {
             try {
-                if (writer != null) writer.close();
-                if (reader != null) reader.close();
-                if (socket != null) socket.close();
+                transport.close();
                 System.out.println("Connection closed.");
             } catch (IOException e) {
                 System.err.println("Error closing resources: " + e.getMessage());
@@ -132,32 +120,9 @@ public class Main {
         }
     }
 
-    private static String readResponse(BufferedReader reader) throws IOException {
-        String line = reader.readLine();
-        if (line != null) {
-            System.out.println("SERVER: " + line);
-        }
-        return line;
-    }
-
     private static void checkResponse(String response, String expectedCode, String errorMessage) throws Exception {
         if (response == null || !response.startsWith(expectedCode)) {
             throw new Exception(errorMessage + " - Response: " + response);
         }
-    }
-
-    private static String readFullResponse(BufferedReader reader) throws IOException {
-        StringBuilder fullResponse = new StringBuilder();
-        String line;
-        do {
-            line = reader.readLine();
-            if (line == null) {
-                throw new IOException("Connection closed by server unexpectedly.");
-            }
-            System.out.println("SERVER: " + line);
-            fullResponse.append(line).append("\n");
-        } while (line.length() >= 4 && line.charAt(3) == '-');
-
-        return fullResponse.substring(0, Math.min(3, fullResponse.length()));
     }
 }
