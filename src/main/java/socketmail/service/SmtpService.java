@@ -2,6 +2,10 @@ package socketmail.service;
 
 import socketmail.model.Email;
 import socketmail.model.SmtpResponse;
+import socketmail.model.vo.EmailAddress;
+import socketmail.model.vo.Host;
+import socketmail.model.vo.Password;
+import socketmail.model.vo.Port;
 import socketmail.service.smtp.DefaultSmtpParser;
 import socketmail.service.smtp.SmtpParser;
 import socketmail.service.smtp.SmtpTransport;
@@ -13,21 +17,21 @@ import java.util.Base64;
 
 public class SmtpService {
 
-    private final String host = ConfigManager.getProperty("mail.smtp.host");
-    private final int port = Integer.parseInt(ConfigManager.getProperty("mail.smtp.port"));
-    private final String username = ConfigManager.getProperty("mail.smtp.user");
-    private final String password = ConfigManager.getProperty("mail.smtp.pass");
+    private final Host host = new Host(ConfigManager.getProperty("mail.smtp.host"));
+    private final Port port = new Port(Integer.parseInt(ConfigManager.getProperty("mail.smtp.port")));
+    private final EmailAddress username = new EmailAddress(ConfigManager.getProperty("mail.smtp.user"));
+    private final Password password = new Password(ConfigManager.getProperty("mail.smtp.pass"));
 
     public void send(Email email) throws IOException {
         SmtpTransport transport = new TcpSmtpTransport();
         SmtpParser parser = new DefaultSmtpParser();
 
         try {
-            transport.connect(host, port);
+            transport.connect(host.value(), port.value());
             SmtpResponse response = parser.read(transport);
             if (response.code() != 220) throw new IOException("Connection failed: " + response);
 
-            transport.writeLine("EHLO " + host);
+            transport.writeLine("EHLO " + host.value());
             response = parser.read(transport);
             if (response.code() != 250) throw new IOException("EHLO failed: " + response);
 
@@ -36,9 +40,9 @@ public class SmtpService {
             transport.writeLine("STARTTLS");
             response = parser.read(transport);
             if (response.code() != 220) throw new IOException("STARTTLS failed: " + response);
-            transport.startTls(host, port);
+            transport.startTls(host.value(), port.value());
 
-            transport.writeLine("EHLO " + host);
+            transport.writeLine("EHLO " + host.value());
             response = parser.read(transport);
             if (response.code() != 250) throw new IOException("EHLO after STARTTLS failed: " + response);
 
@@ -46,19 +50,19 @@ public class SmtpService {
             response = parser.read(transport);
             if (response.code() != 334) throw new IOException("AUTH LOGIN failed: " + response);
 
-            transport.writeLine(Base64.getEncoder().encodeToString(username.getBytes()));
+            transport.writeLine(Base64.getEncoder().encodeToString(username.value().getBytes()));
             response = parser.read(transport);
             if (response.code() != 334) throw new IOException("Username failed: " + response);
 
-            transport.writeLine(Base64.getEncoder().encodeToString(password.getBytes()));
+            transport.writeLine(Base64.getEncoder().encodeToString(password.value().getBytes()));
             response = parser.read(transport);
             if (response.code() != 235) throw new IOException("Password failed: " + response);
 
-            transport.writeLine("MAIL FROM: <" + email.from() + ">");
+            transport.writeLine("MAIL FROM: <" + email.from().value() + ">");
             response = parser.read(transport);
             if (response.code() != 250) throw new IOException("MAIL FROM failed: " + response);
 
-            transport.writeLine("RCPT TO: <" + email.to() + ">");
+            transport.writeLine("RCPT TO: <" + email.to().value() + ">");
             response = parser.read(transport);
             if (response.code() != 250) throw new IOException("RCPT TO failed: " + response);
 
@@ -66,8 +70,8 @@ public class SmtpService {
             response = parser.read(transport);
             if (response.code() != 354) throw new IOException("DATA failed: " + response);
 
-            transport.writeLine("From: " + email.from());
-            transport.writeLine("To: " + email.to());
+            transport.writeLine("From: " + email.from().value());
+            transport.writeLine("To: " + email.to().value());
             transport.writeLine("Subject: " + email.subject());
             transport.writeLine("");
             transport.writeLine(email.body());

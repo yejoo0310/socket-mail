@@ -1,6 +1,7 @@
 package socketmail.controller;
 
 import socketmail.model.Email;
+import socketmail.model.vo.EmailAddress;
 import socketmail.service.SmtpService;
 import socketmail.util.ConfigManager;
 import socketmail.view.MainView;
@@ -35,31 +36,35 @@ public class MainController {
                 return;
             }
 
-            Email email = new Email(from, to, subject, body);
-            view.getSendButton().setEnabled(false); // 버튼 비활성화
+            try {
+                Email email = new Email(new EmailAddress(from), new EmailAddress(to), subject, body);
+                view.getSendButton().setEnabled(false); // 버튼 비활성화
 
-            // SwingWorker를 사용하여 백그라운드에서 이메일 전송
-            SwingWorker<Void, Void> worker = new SwingWorker<>() {
-                @Override
-                protected Void doInBackground() throws Exception {
-                    smtpService.send(email);
-                    return null;
-                }
-
-                @Override
-                protected void done() {
-                    try {
-                        get(); // doInBackground에서 발생한 예외를 가져옴
-                        JOptionPane.showMessageDialog(view, "Email sent successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-                    } catch (Exception ex) {
-                        JOptionPane.showMessageDialog(view, "Failed to send email: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                        ex.printStackTrace();
-                    } finally {
-                        view.getSendButton().setEnabled(true); // 버튼 다시 활성화
+                // SwingWorker를 사용하여 백그라운드에서 이메일 전송
+                SwingWorker<Void, Void> worker = new SwingWorker<>() {
+                    @Override
+                    protected Void doInBackground() throws Exception {
+                        smtpService.send(email);
+                        return null;
                     }
-                }
-            };
-            worker.execute();
+
+                    @Override
+                    protected void done() {
+                        try {
+                            get(); // doInBackground에서 발생한 예외를 가져옴
+                            JOptionPane.showMessageDialog(view, "Email sent successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                        } catch (Exception ex) {
+                            JOptionPane.showMessageDialog(view, "Failed to send email: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                            ex.printStackTrace();
+                        } finally {
+                            view.getSendButton().setEnabled(true); // 버튼 다시 활성화
+                        }
+                    }
+                };
+                worker.execute();
+            } catch (IllegalArgumentException ex) {
+                JOptionPane.showMessageDialog(view, "Invalid email address: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 }

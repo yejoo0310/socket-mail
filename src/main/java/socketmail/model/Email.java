@@ -1,4 +1,6 @@
 package socketmail.model;
 
-public record Email(String from, String to, String subject, String body) {
+import socketmail.model.vo.EmailAddress;
+
+public record Email(EmailAddress from, EmailAddress to, String subject, String body) {
 }
