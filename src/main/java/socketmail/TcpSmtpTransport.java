@@ -1,5 +1,6 @@
 package socketmail;
 
+import javax.net.ssl.SSLSocketFactory;
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
@@ -16,6 +17,14 @@ public class TcpSmtpTransport implements SmtpTransport {
         writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.US_ASCII));
         reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.US_ASCII));
         System.out.println("Connected to " + host + ":" + port);
+    }
+
+    @Override
+    public void startTls(String host, int port) throws IOException {
+        SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+        socket = factory.createSocket(socket, host, port, true);
+        writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.US_ASCII));
+        reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.US_ASCII));
     }
 
     @Override
@@ -46,4 +55,5 @@ public class TcpSmtpTransport implements SmtpTransport {
     private void ensureConnected() {
         if (socket == null || socket.isClosed()) throw new IllegalStateException("Socket not connected");
     }
+
 }

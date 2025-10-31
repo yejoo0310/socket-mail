@@ -1,8 +1,6 @@
 package socketmail;
 
-import javax.net.ssl.SSLSocketFactory;
 import java.io.*;
-import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Base64;
 
@@ -26,88 +24,83 @@ public class Main {
             port = 587;
         }
 
-        Socket socket = null;
-        PrintWriter writer = null;
-        BufferedReader reader = null;
-
         try{
             transport.connect(hostname, port);
 
             String line = transport.readLine();
+            System.out.println("connect: " + line);
             checkResponse(line, "220", "Connection Failed");
 
             transport.writeLine("EHLO " + hostname);
             line = transport.readLine();
+            System.out.println("EHLO: " +  line);
             checkResponse(line, "250", "EHLO failed");
+            while (line.length() >= 4 && line.charAt(3) == '-') {
+                line = transport.readLine();
+                checkResponse(line, "250", "EHLO failed");
+            }
 
             transport.writeLine("STARTTLS");
             line = transport.readLine();
+            System.out.println("STARTTLS: " +  line);
             checkResponse(line, "220", "STARTTLS failed");
 
-            SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-            socket = factory.createSocket(socket, hostname, port, true);
-
-            input = socket.getInputStream();
-            output = socket.getOutputStream();
-            writer = new PrintWriter(output, true);
-            reader = new BufferedReader(new InputStreamReader(input));
-
+            transport.startTls(hostname, port);
             System.out.println("TLS/SSL layer established");
 
-            writer.println("EHLO " + hostname);
-            line = readResponse(reader);
+            transport.writeLine("EHLO " + hostname);
+            line = transport.readLine();
+            System.out.println(line);
             checkResponse(line, "250", "second EHLO failed");
-
-            try {
-                while (reader.ready()) {
-                    reader.readLine();
-                }
-            } catch (IOException ignored) {
+            while (line.length() >= 4 && line.charAt(3) == '-') {
+                line = transport.readLine();
+                checkResponse(line, "250", "EHLO failed");
             }
 
-            writer.println("AUTH LOGIN");
-            line = readResponse(reader);
+            transport.writeLine("AUTH LOGIN");
+            line = transport.readLine();
             checkResponse(line, "334", "AUTH LOGIN failed");
 
             String encodedEmail = Base64.getEncoder().encodeToString(sender.getBytes());
-            writer.println(encodedEmail);
-            line = readResponse(reader);
+            transport.writeLine(encodedEmail);
+            line = transport.readLine();
             checkResponse(line, "334", "Username failed");
 
             String encodedPassword = Base64.getEncoder().encodeToString(password.getBytes());
-            writer.println(encodedPassword);
-            line = readResponse(reader);
+            transport.writeLine(encodedPassword);
+            line = transport.readLine();
             checkResponse(line, "235", "Password failed");
 
             System.out.println("Authentication successful.");
 
-            writer.println("MAIL FROM: <" + sender + ">");
-            line = readResponse(reader);
+            transport.writeLine("MAIL FROM: <" + sender + ">");
+            line = transport.readLine();
             checkResponse(line, "250", "MAIL FROM failed");
 
-            writer.println("RCPT TO: <" + receiver + ">");
-            line = readResponse(reader);
+            transport.writeLine("RCPT TO: <" + receiver + ">");
+            line = transport.readLine();
             checkResponse(line, "250", "RCPT TO failed");
 
-            writer.println("DATA");
-            line = readResponse(reader);
-            System.out.println(line);
+            transport.writeLine("DATA");
+            line = transport.readLine();
             checkResponse(line, "354", "DATA command failed");
 
-            writer.write("To: <" + receiver + ">\r\n");
-            writer.write("From: <" + sender + ">\r\n");
-            writer.write("Subject: SMTP project\r\n");
-            writer.write("\r\n");
-            writer.write(content + "\r\n");
-            writer.write(".\r\n");
-            writer.flush();
+            transport.writeLine("To: <" + receiver + ">");
+            transport.writeLine("From: <" + sender + ">");
+            transport.writeLine("Subject: SMTP project");
+            transport.writeLine("");
+            transport.writeLine(content);
+            transport.writeLine(".");
 
-            line = readFullResponse(reader);
-            checkResponse(line, "250", "DATA delivery failed");
+           for (String ln : content.split("\r?\n")) {
+                transport.writeLine(ln); // (dot-stuffing은 다음 단계에서 Composer로)
+            }
+            transport.writeLine(".");
+            checkResponse(transport.readLine(), "250", "DATA delivery failed");
 
             System.out.println("Email successfully sent!");
 
-            writer.println("quit");
+            transport.writeLine("QUIT");
 
         } catch (UnknownHostException e) {
             System.err.println("Unknown host: " + hostname);
