@@ -5,7 +5,6 @@ import socketmail.model.Email;
 import socketmail.model.SmtpResponse;
 import socketmail.model.config.SmtpConfig;
 import java.io.IOException;
-import java.util.Base64;
 
 public class SmtpSession implements AutoCloseable {
 
@@ -56,15 +55,11 @@ public class SmtpSession implements AutoCloseable {
         checkResponse(parser.read(transport), SmtpStatusCode.AUTH_CONTINUE,
                 FAILED_MESSAGE_FORMAT.formatted(SmtpCommand.AUTH_LOGIN.toString()));
 
-        String userBase64 =
-                Base64.getEncoder().encodeToString(config.username().value().getBytes());
-        writeCommand(userBase64);
+        writeCommand(config.username().encodedValue());
         checkResponse(parser.read(transport), SmtpStatusCode.AUTH_CONTINUE,
                 FAILED_MESSAGE_FORMAT.formatted("Username"));
 
-        String passBase64 =
-                Base64.getEncoder().encodeToString(config.password().value().getBytes());
-        writeCommand(passBase64);
+        writeCommand(config.password().encodedValue());
         checkResponse(parser.read(transport), SmtpStatusCode.AUTH_SUCCESS,
                 FAILED_MESSAGE_FORMAT.formatted("Password"));
     }
