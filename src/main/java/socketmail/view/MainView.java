@@ -6,12 +6,17 @@ import java.awt.*;
 public class MainView extends JFrame {
     private JTextField toField;
     private JTextField subjectField;
-    private JTextArea bodyArea;
+    private JTextArea bodyEditor;
+    private JEditorPane htmlPreview;
     private JButton sendButton;
+    private JButton attachButton;
+    private JButton loadHtmlButton;
+    private JButton embedImageButton;
+    private JLabel attachmentsLabel;
 
     public MainView() {
         setTitle("Socket Mail");
-        setSize(500, 400);
+        setSize(800, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
@@ -41,18 +46,40 @@ public class MainView extends JFrame {
         subjectField = new JTextField();
         panel.add(subjectField, gbc);
 
-        // Body
+        // Body (Editor and Preview)
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.gridwidth = 2;
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.BOTH;
-        bodyArea = new JTextArea();
-        panel.add(new JScrollPane(bodyArea), gbc);
+        bodyEditor = new JTextArea();
+        htmlPreview = new JEditorPane();
+        htmlPreview.setEditable(false);
+        htmlPreview.setContentType("text/html");
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
+                new JScrollPane(bodyEditor), new JScrollPane(htmlPreview));
+        splitPane.setResizeWeight(0.5);
+        panel.add(splitPane, gbc);
+
+
+        // Button Panel
+        gbc.gridy = 3;
+        gbc.weighty = 0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        attachButton = new JButton("Attach File");
+        loadHtmlButton = new JButton("Load HTML");
+        embedImageButton = new JButton("Embed Image");
+        attachmentsLabel = new JLabel("Attachments: ");
+        buttonPanel.add(attachButton);
+        buttonPanel.add(loadHtmlButton);
+        buttonPanel.add(embedImageButton);
+        buttonPanel.add(attachmentsLabel);
+        panel.add(buttonPanel, gbc);
 
         // Send Button
         gbc.gridx = 0;
-        gbc.gridy = 3;
+        gbc.gridy = 4;
         gbc.gridwidth = 2;
         gbc.weighty = 0;
         gbc.fill = GridBagConstraints.NONE;
@@ -63,6 +90,18 @@ public class MainView extends JFrame {
         add(panel);
     }
 
+    public JButton getAttachButton() {
+        return attachButton;
+    }
+
+    public JButton getLoadHtmlButton() {
+        return loadHtmlButton;
+    }
+
+    public JLabel getAttachmentsLabel() {
+        return attachmentsLabel;
+    }
+
     public JTextField getToField() {
         return toField;
     }
@@ -71,8 +110,16 @@ public class MainView extends JFrame {
         return subjectField;
     }
 
-    public JTextArea getBodyArea() {
-        return bodyArea;
+    public JTextArea getBodyEditor() {
+        return bodyEditor;
+    }
+
+    public JEditorPane getHtmlPreview() {
+        return htmlPreview;
+    }
+
+    public JButton getEmbedImageButton() {
+        return embedImageButton;
     }
 
     public JButton getSendButton() {
