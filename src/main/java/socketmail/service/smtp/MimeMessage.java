@@ -22,10 +22,8 @@ public class MimeMessage {
 
     private String buildContent(EmailForm email) throws IOException {
         boolean hasAttachments = email.attachments() != null && !email.attachments().isEmpty();
-        boolean hasInlineImages = email.inlineImages() != null && !email.inlineImages().isEmpty();
 
         String mixedBoundary = "mixed-" + UUID.randomUUID();
-        String relatedBoundary = "related-" + UUID.randomUUID();
         String alternativeBoundary = "alternative-" + UUID.randomUUID();
 
         StringBuilder message = new StringBuilder();
@@ -41,18 +39,8 @@ public class MimeMessage {
             message.append("--").append(mixedBoundary).append(CRLF);
         }
 
-        if (hasInlineImages) {
-            message.append("Content-Type: multipart/related; boundary=").append(relatedBoundary).append(CRLF).append(CRLF);
-        }
-
         // Body Part
-        appendBody(message, email, hasInlineImages ? relatedBoundary : mixedBoundary, alternativeBoundary);
-
-        // Inline Images Part
-        if (hasInlineImages) {
-            appendInlineImages(message, email.inlineImages(), relatedBoundary);
-            message.append("--").append(relatedBoundary).append("--").append(CRLF);
-        }
+        appendBody(message, email, mixedBoundary, alternativeBoundary);
 
         // Attachments Part
         if (hasAttachments) {
@@ -84,23 +72,6 @@ public class MimeMessage {
             message.append("Content-Type: text/plain; charset=UTF-8").append(CRLF);
             message.append("Content-Transfer-Encoding: base64").append(CRLF).append(CRLF);
             message.append(Base64.getEncoder().encodeToString(email.messageBody().value().getBytes())).append(CRLF);
-        }
-    }
-
-    private void appendInlineImages(StringBuilder message, List<InlineImage> inlineImages, String boundary) throws IOException {
-        for (InlineImage inlineImage : inlineImages) {
-            File file = inlineImage.file();
-            String fileName = file.getName();
-            String mimeType = Files.probeContentType(file.toPath());
-            byte[] fileContent = Files.readAllBytes(file.toPath());
-            String encodedFile = Base64.getEncoder().encodeToString(fileContent);
-
-            message.append("--").append(boundary).append(CRLF);
-            message.append("Content-Type: ").append(mimeType).append("; name=\"").append(fileName).append("\"").append(CRLF);
-            message.append("Content-Transfer-Encoding: base64").append(CRLF);
-            message.append("Content-ID: <").append(inlineImage.contentId()).append(">").append(CRLF);
-            message.append("Content-Disposition: inline; filename=\"").append(fileName).append("\"").append(CRLF).append(CRLF);
-            message.append(encodedFile).append(CRLF);
         }
     }
 

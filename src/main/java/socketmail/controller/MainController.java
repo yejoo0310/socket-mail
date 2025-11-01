@@ -22,7 +22,6 @@ public class MainController {
     private final MainView view;
     private final SmtpService smtpService;
     private final List<File> attachments = new ArrayList<>();
-    private final List<InlineImage> inlineImages = new ArrayList<>();
     private String htmlBody = null;
 
     public MainController(MainView view, ConfigManager config) {
@@ -33,8 +32,6 @@ public class MainController {
         this.view.getSendButton().addActionListener(new SendEmailListener());
         this.view.getAttachButton().addActionListener(new AttachFileListener());
         this.view.getLoadHtmlButton().addActionListener(new LoadHtmlListener());
-        this.view.getEmbedImageButton().addActionListener(new EmbedImageListener());
-        this.view.getBodyEditor().getDocument().addDocumentListener(new HtmlPreviewListener());
     }
 
     class SendEmailListener implements ActionListener {
@@ -51,7 +48,7 @@ public class MainController {
                 List<Attachment> attachmentList = attachments.stream().map(Attachment::new).collect(Collectors.toList());
 
                 EmailForm email = new EmailForm(new EmailAddress(from), new EmailAddress(to),
-                        new Subject(subject), messageBody, htmlBody, attachmentList, inlineImages);
+                        new Subject(subject), messageBody, htmlBody, attachmentList);
 
                 view.getSendButton().setEnabled(false);
 
@@ -76,7 +73,6 @@ public class MainController {
                         } finally {
                             view.getSendButton().setEnabled(true);
                             attachments.clear();
-                            inlineImages.clear();
                             htmlBody = null;
                             view.getAttachmentsLabel().setText("Attachments: ");
                         }
@@ -118,41 +114,6 @@ public class MainController {
                     JOptionPane.showMessageDialog(view, "Error loading HTML file: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
-        }
-    }
-
-    class EmbedImageListener implements ActionListener {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            JFileChooser fileChooser = new JFileChooser();
-            if (fileChooser.showOpenDialog(view) == JFileChooser.APPROVE_OPTION) {
-                File file = fileChooser.getSelectedFile();
-                String cid = UUID.randomUUID().toString();
-                inlineImages.add(new InlineImage(file, cid));
-                String imgTag = "<img src=\"cid:" + cid + "\" alt=\"" + file.getName() + "\">";
-                view.getBodyEditor().insert(imgTag, view.getBodyEditor().getCaretPosition());
-            }
-        }
-    }
-
-    class HtmlPreviewListener implements DocumentListener {
-        @Override
-        public void insertUpdate(DocumentEvent e) {
-            updatePreview();
-        }
-
-        @Override
-        public void removeUpdate(DocumentEvent e) {
-            updatePreview();
-        }
-
-        @Override
-        public void changedUpdate(DocumentEvent e) {
-            updatePreview();
-        }
-
-        private void updatePreview() {
-            view.getHtmlPreview().setText(view.getBodyEditor().getText());
         }
     }
 }
