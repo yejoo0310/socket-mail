@@ -8,6 +8,9 @@ public class MainView extends JFrame {
     private JTextField subjectField;
     private JTextArea bodyArea;
     private JButton sendButton;
+    private JButton attachButton;
+    private JButton loadHtmlButton;
+    private JLabel attachmentsLabel;
 
     public MainView() {
         setTitle("Socket Mail");
@@ -50,9 +53,22 @@ public class MainView extends JFrame {
         bodyArea = new JTextArea();
         panel.add(new JScrollPane(bodyArea), gbc);
 
+        // Button Panel
+        gbc.gridy = 3;
+        gbc.weighty = 0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        attachButton = new JButton("Attach");
+        loadHtmlButton = new JButton("Load HTML");
+        attachmentsLabel = new JLabel("Attachments: ");
+        buttonPanel.add(attachButton);
+        buttonPanel.add(loadHtmlButton);
+        buttonPanel.add(attachmentsLabel);
+        panel.add(buttonPanel, gbc);
+
         // Send Button
         gbc.gridx = 0;
-        gbc.gridy = 3;
+        gbc.gridy = 4;
         gbc.gridwidth = 2;
         gbc.weighty = 0;
         gbc.fill = GridBagConstraints.NONE;
@@ -61,6 +77,18 @@ public class MainView extends JFrame {
         panel.add(sendButton, gbc);
 
         add(panel);
+    }
+
+    public JButton getAttachButton() {
+        return attachButton;
+    }
+
+    public JButton getLoadHtmlButton() {
+        return loadHtmlButton;
+    }
+
+    public JLabel getAttachmentsLabel() {
+        return attachmentsLabel;
     }
 
     public JTextField getToField() {

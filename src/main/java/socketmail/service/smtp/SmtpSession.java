@@ -79,11 +79,8 @@ public class SmtpSession implements AutoCloseable {
         checkResponse(parser.read(transport), SmtpStatusCode.START_MAIL_INPUT,
                 FAILED_MESSAGE_FORMAT.formatted(SmtpCommand.DATA.toString()));
 
-        writeCommand("From: " + fromAddress);
-        writeCommand("To: " + toAddress);
-        writeCommand("Subject: " + email.subject().value());
-        writeCommand("");
-        writeCommand(email.body().value());
+        MimeMessage mimeMessage = new MimeMessage(email);
+        writeCommand(mimeMessage.toString());
         writeCommand("."); // End of data
 
         String step = "Email content sending";
