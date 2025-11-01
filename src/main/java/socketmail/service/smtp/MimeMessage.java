@@ -26,7 +26,7 @@ public class MimeMessage {
         // Headers
         message.append("From: ").append(email.from().value()).append(CRLF);
         message.append("To: ").append(email.to().value()).append(CRLF);
-        message.append("Subject: ").append(email.subject().value()).append(CRLF);
+        message.append("Subject: ").append(encodeSubject(email.subject().value())).append(CRLF);
         message.append("MIME-Version: 1.0").append(CRLF);
         message.append("Content-Type: multipart/mixed; boundary=").append(boundary).append(CRLF);
         message.append(CRLF);
@@ -54,20 +54,35 @@ public class MimeMessage {
             // Plain text part
             message.append("--").append(alternativeBoundary).append(CRLF);
             message.append("Content-Type: text/plain; charset=UTF-8").append(CRLF);
+            message.append("Content-Transfer-Encoding: 8bit").append(CRLF);
             message.append(CRLF);
             message.append(email.messageBody().value()).append(CRLF);
 
             // HTML part
             message.append("--").append(alternativeBoundary).append(CRLF);
             message.append("Content-Type: text/html; charset=UTF-8").append(CRLF);
+            message.append("Content-Transfer-Encoding: 8bit").append(CRLF);
             message.append(CRLF);
             message.append(email.htmlBody()).append(CRLF);
             message.append("--").append(alternativeBoundary).append("--").append(CRLF);
         } else {
             message.append("Content-Type: text/plain; charset=UTF-8").append(CRLF);
+            message.append("Content-Transfer-Encoding: 8bit").append(CRLF);
             message.append(CRLF);
             message.append(email.messageBody().value()).append(CRLF);
         }
+    }
+
+    private String encodeSubject(String subject) {
+        if (subject.matches(".*[\\p{IsHangul}].*")) {
+            try {
+                return "=?UTF-8?B?" + Base64.getEncoder().encodeToString(subject.getBytes("UTF-8")) + "?=";
+            } catch (java.io.UnsupportedEncodingException e) {
+                // Should not happen with UTF-8
+                return subject;
+            }
+        }
+        return subject;
     }
 
     private void appendAttachments(StringBuilder message, List<Attachment> attachments, String boundary) throws IOException {
