@@ -52,17 +52,6 @@ public class MainView extends JFrame {
         add(buttonPanel, BorderLayout.SOUTH);
     }
 
-    public JButton getAttachButton() {
-        return attachButton;
-    }
-
-    public JButton getLoadHtmlButton() {
-        return loadHtmlButton;
-    }
-
-    public JLabel getAttachmentsLabel() {
-        return attachmentsLabel;
-    }
 
     public JTextField getToField() {
         return toField;
