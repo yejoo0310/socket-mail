@@ -6,8 +6,7 @@ import socketmail.util.ConfigManager;
 import socketmail.view.MainView;
 
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
+import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -15,7 +14,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class MainController {
@@ -39,13 +37,14 @@ public class MainController {
         public void actionPerformed(ActionEvent e) {
             String to = view.getToField().getText();
             String subject = view.getSubjectField().getText();
-            String textBody = view.getBodyEditor().getText(); // Use editor content as plain text fallback
-            htmlBody = view.getBodyEditor().getText(); // Also use editor content as HTML body
+            String textBody = view.getBodyEditor().getText();
+            htmlBody = view.getBodyEditor().getText();
             String from = ConfigManager.getProperty("mail.smtp.user");
 
             try {
                 MessageBody messageBody = new MessageBody(textBody, "text/plain");
-                List<Attachment> attachmentList = attachments.stream().map(Attachment::new).collect(Collectors.toList());
+                List<Attachment> attachmentList =
+                        attachments.stream().map(Attachment::new).collect(Collectors.toList());
 
                 EmailForm email = new EmailForm(new EmailAddress(from), new EmailAddress(to),
                         new Subject(subject), messageBody, htmlBody, attachmentList);
@@ -74,7 +73,7 @@ public class MainController {
                             view.getSendButton().setEnabled(true);
                             attachments.clear();
                             htmlBody = null;
-                            view.getAttachmentsLabel().setText("Attachments: ");
+                            updateAttachmentsUI();
                         }
                     }
                 };
@@ -95,10 +94,27 @@ public class MainController {
                 for (File file : fileChooser.getSelectedFiles()) {
                     attachments.add(file);
                 }
-                String attachmentNames = attachments.stream().map(File::getName).collect(Collectors.joining(", "));
-                view.getAttachmentsLabel().setText("Attachments: " + attachmentNames);
+                updateAttachmentsUI();
             }
         }
+    }
+
+    private void updateAttachmentsUI() {
+        view.getAttachmentPanel().removeAll();
+        for (File file : attachments) {
+            JPanel filePanel = new JPanel(new BorderLayout());
+            JLabel fileNameLabel = new JLabel(file.getName());
+            JButton removeButton = new JButton("x");
+            removeButton.addActionListener(e -> {
+                attachments.remove(file);
+                updateAttachmentsUI();
+            });
+            filePanel.add(fileNameLabel, BorderLayout.CENTER);
+            filePanel.add(removeButton, BorderLayout.EAST);
+            view.getAttachmentPanel().add(filePanel);
+        }
+        view.getAttachmentPanel().revalidate();
+        view.getAttachmentPanel().repaint();
     }
 
     class LoadHtmlListener implements ActionListener {
@@ -111,7 +127,9 @@ public class MainController {
                     String content = new String(Files.readAllBytes(file.toPath()));
                     view.getBodyEditor().setText(content);
                 } catch (IOException ex) {
-                    JOptionPane.showMessageDialog(view, "Error loading HTML file: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(view,
+                            "Error loading HTML file: " + ex.getMessage(), "Error",
+                            JOptionPane.ERROR_MESSAGE);
                 }
             }
         }

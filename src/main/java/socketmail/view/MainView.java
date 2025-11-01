@@ -4,6 +4,26 @@ import javax.swing.*;
 import java.awt.*;
 
 public class MainView extends JFrame {
+
+    private final JTextField toField;
+    private final JTextField subjectField;
+    private final JEditorPane bodyEditor;
+    private final JButton sendButton;
+    private final JButton attachButton;
+    private final JButton loadHtmlButton;
+    private final JPanel attachmentPanel;
+
+    public MainView() {
+        setTitle("SocketMail");
+        setSize(800, 600);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        // Fields
+        toField = new JTextField();
+        subjectField = new JTextField();
+        attachmentPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+
         bodyEditor = new JEditorPane();
         bodyEditor.setContentType("text/html");
         JScrollPane bodyScrollPane = new JScrollPane(bodyEditor);
@@ -19,8 +39,8 @@ public class MainView extends JFrame {
         topPanel.add(toField);
         topPanel.add(new JLabel("Subject:"));
         topPanel.add(subjectField);
-        topPanel.add(new JLabel(""));
-        topPanel.add(attachmentsLabel);
+        topPanel.add(new JLabel("Attachments:"));
+        topPanel.add(new JScrollPane(attachmentPanel));
 
         JPanel buttonPanel = new JPanel();
         buttonPanel.add(sendButton);
@@ -56,7 +76,7 @@ public class MainView extends JFrame {
         return loadHtmlButton;
     }
 
-    public JLabel getAttachmentsLabel() {
-        return attachmentsLabel;
+    public JPanel getAttachmentPanel() {
+        return attachmentPanel;
     }
 }
