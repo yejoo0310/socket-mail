@@ -8,9 +8,10 @@ public record EmailForm(
         Subject subject,
         MessageBody messageBody,
         String htmlBody,
-        List<Attachment> attachments
+        List<Attachment> attachments,
+        List<InlineImage> inlineImages
 ) {
-    public EmailForm(EmailAddress from, EmailAddress to, Subject subject, MessageBody messageBody) {
-        this(from, to, subject, messageBody, null, List.of());
+    public EmailForm(EmailAddress from, EmailAddress to, Subject subject, MessageBody messageBody, String htmlBody, List<Attachment> attachments) {
+        this(from, to, subject, messageBody, htmlBody, attachments, List.of());
     }
 }
