@@ -65,15 +65,16 @@ public class SmtpSession implements AutoCloseable {
 
     private void sendMessage(EmailForm email) throws IOException {
         String fromAddress = email.from().value();
-        String toAddress = email.to().value();
 
         writeCommand(SmtpCommand.MAIL_FROM.toString() + ": <" + fromAddress + ">");
         checkResponse(parser.read(transport), SmtpStatusCode.OK,
                 FAILED_MESSAGE_FORMAT.formatted(SmtpCommand.MAIL_FROM.toString()));
 
-        writeCommand(SmtpCommand.RCPT_TO.toString() + ": <" + toAddress + ">");
-        checkResponse(parser.read(transport), SmtpStatusCode.OK,
-                FAILED_MESSAGE_FORMAT.formatted(SmtpCommand.RCPT_TO.toString()));
+        for (var to : email.to().getAddresses()) {
+            writeCommand(SmtpCommand.RCPT_TO.toString() + ": <" + to.value() + ">");
+            checkResponse(parser.read(transport), SmtpStatusCode.OK,
+                    FAILED_MESSAGE_FORMAT.formatted(SmtpCommand.RCPT_TO.toString()));
+        }
 
         writeCommand(SmtpCommand.DATA.toString());
         checkResponse(parser.read(transport), SmtpStatusCode.START_MAIL_INPUT,

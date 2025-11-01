@@ -2,7 +2,6 @@ package socketmail.service.smtp;
 
 import socketmail.model.Attachment;
 import socketmail.model.EmailForm;
-import socketmail.model.InlineImage;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,6 +9,7 @@ import java.nio.file.Files;
 import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
+
 
 public class MimeMessage {
 
@@ -29,8 +29,9 @@ public class MimeMessage {
         StringBuilder message = new StringBuilder();
 
         // General Headers
+        // General Headers
         message.append("From: ").append(encodeHeader(email.from().value())).append(CRLF);
-        message.append("To: ").append(encodeHeader(email.to().value())).append(CRLF);
+        message.append("To: ").append(encodeHeader(email.to().toHeaderString())).append(CRLF);
         message.append("Subject: ").append(encodeHeader(email.subject().value())).append(CRLF);
         message.append("MIME-Version: 1.0").append(CRLF);
 

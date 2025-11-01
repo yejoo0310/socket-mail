@@ -13,7 +13,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class MainController {
@@ -35,18 +37,19 @@ public class MainController {
     class SendEmailListener implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
-            String to = view.getToField().getText();
-            String subject = view.getSubjectField().getText();
-            String textBody = view.getBodyEditor().getText();
-            htmlBody = view.getBodyEditor().getText();
-            String from = ConfigManager.getProperty("mail.smtp.user");
-
             try {
-                MessageBody messageBody = new MessageBody(textBody, "text/plain");
-                List<Attachment> attachmentList =
-                        attachments.stream().map(Attachment::new).collect(Collectors.toList());
+                String toRaw = view.getToField().getText();
+                Recipients recipients = new Recipients(toRaw);
 
-                EmailForm email = new EmailForm(new EmailAddress(from), new EmailAddress(to),
+                String subject = view.getSubjectField().getText();
+                String textBody = view.getBodyEditor().getText(); // Use editor content as plain text fallback
+                htmlBody = view.getBodyEditor().getText(); // Also use editor content as HTML body
+                String from = ConfigManager.getProperty("mail.smtp.user");
+
+                MessageBody messageBody = new MessageBody(textBody, "text/plain");
+                List<Attachment> attachmentList = attachments.stream().map(Attachment::new).collect(Collectors.toList());
+
+                EmailForm email = new EmailForm(new EmailAddress(from), recipients,
                         new Subject(subject), messageBody, htmlBody, attachmentList);
 
                 view.getSendButton().setEnabled(false);
