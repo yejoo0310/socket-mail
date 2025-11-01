@@ -31,9 +31,9 @@ public class MimeMessage {
         StringBuilder message = new StringBuilder();
 
         // General Headers
-        message.append("From: ").append(email.from().value()).append(CRLF);
-        message.append("To: ").append(email.to().value()).append(CRLF);
-        message.append("Subject: ").append(encodeSubject(email.subject().value())).append(CRLF);
+        message.append("From: ").append(encodeHeader(email.from().value())).append(CRLF);
+        message.append("To: ").append(encodeHeader(email.to().value())).append(CRLF);
+        message.append("Subject: ").append(encodeHeader(email.subject().value())).append(CRLF);
         message.append("MIME-Version: 1.0").append(CRLF);
 
         if (hasAttachments) {
@@ -70,20 +70,20 @@ public class MimeMessage {
             // Plain text part
             message.append("--").append(alternativeBoundary).append(CRLF);
             message.append("Content-Type: text/plain; charset=UTF-8").append(CRLF);
-            message.append("Content-Transfer-Encoding: 8bit").append(CRLF).append(CRLF);
-            message.append(email.messageBody().value()).append(CRLF);
+            message.append("Content-Transfer-Encoding: base64").append(CRLF).append(CRLF);
+            message.append(Base64.getEncoder().encodeToString(email.messageBody().value().getBytes())).append(CRLF);
 
             // HTML part
             message.append("--").append(alternativeBoundary).append(CRLF);
             message.append("Content-Type: text/html; charset=UTF-8").append(CRLF);
-            message.append("Content-Transfer-Encoding: 8bit").append(CRLF).append(CRLF);
-            message.append(email.htmlBody()).append(CRLF);
+            message.append("Content-Transfer-Encoding: base64").append(CRLF).append(CRLF);
+            message.append(Base64.getEncoder().encodeToString(email.htmlBody().getBytes())).append(CRLF);
             message.append("--").append(alternativeBoundary).append("--").append(CRLF);
         } else {
             // Plain text only
             message.append("Content-Type: text/plain; charset=UTF-8").append(CRLF);
-            message.append("Content-Transfer-Encoding: 8bit").append(CRLF).append(CRLF);
-            message.append(email.messageBody().value()).append(CRLF);
+            message.append("Content-Transfer-Encoding: base64").append(CRLF).append(CRLF);
+            message.append(Base64.getEncoder().encodeToString(email.messageBody().value().getBytes())).append(CRLF);
         }
     }
 
@@ -120,15 +120,15 @@ public class MimeMessage {
         }
     }
 
-    private String encodeSubject(String subject) {
-        if (subject.matches(".*[\\p{IsHangul}].*")) {
+    private String encodeHeader(String header) {
+        if (header.matches(".*[\\p{IsHangul}].*")) {
             try {
-                return "=?UTF-8?B?" + Base64.getEncoder().encodeToString(subject.getBytes("UTF-8")) + "?=";
+                return "=?UTF-8?B?" + Base64.getEncoder().encodeToString(header.getBytes("UTF-8")) + "?=";
             } catch (java.io.UnsupportedEncodingException e) {
-                return subject;
+                return header;
             }
         }
-        return subject;
+        return header;
     }
 
     @Override

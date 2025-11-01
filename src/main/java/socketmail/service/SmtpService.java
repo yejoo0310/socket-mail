@@ -17,6 +17,10 @@ public class SmtpService {
 
     private final SmtpConfig config;
 
+    public SmtpService(SmtpConfig config) {
+        this.config = config;
+    }
+
     public SmtpService() {
         this.config = new SmtpConfig(new Host(ConfigManager.getProperty("mail.smtp.host")),
                 new Port(Integer.parseInt(ConfigManager.getProperty("mail.smtp.port"))),
