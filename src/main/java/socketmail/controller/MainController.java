@@ -118,22 +118,4 @@ public class MainController {
         view.getAttachmentPanel().revalidate();
         view.getAttachmentPanel().repaint();
     }
-
-    class LoadHtmlListener implements ActionListener {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            JFileChooser fileChooser = new JFileChooser();
-            if (fileChooser.showOpenDialog(view) == JFileChooser.APPROVE_OPTION) {
-                File file = fileChooser.getSelectedFile();
-                try {
-                    String content = new String(Files.readAllBytes(file.toPath()));
-                    view.getBodyEditor().setText(content);
-                } catch (IOException ex) {
-                    JOptionPane.showMessageDialog(view,
-                            "Error loading HTML file: " + ex.getMessage(), "Error",
-                            JOptionPane.ERROR_MESSAGE);
-                }
-            }
-        }
-    }
 }
