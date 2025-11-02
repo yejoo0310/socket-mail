@@ -82,7 +82,7 @@ public class SmtpSession implements AutoCloseable {
 
         MimeMessage mimeMessage = new MimeMessage(email);
         writeCommand(mimeMessage.toString());
-        writeCommand("."); // End of data
+        writeCommand(".");
 
         String step = "Email content sending";
         checkResponse(parser.read(transport), SmtpStatusCode.OK,

@@ -28,8 +28,6 @@ public class MimeMessage {
 
         StringBuilder message = new StringBuilder();
 
-        // General Headers
-        // General Headers
         message.append("From: ").append(encodeHeader(email.from().value())).append(CRLF);
         message.append("To: ").append(encodeHeader(email.to().toHeaderString())).append(CRLF);
         message.append("Subject: ").append(encodeHeader(email.subject().value())).append(CRLF);
@@ -40,10 +38,8 @@ public class MimeMessage {
             message.append("--").append(mixedBoundary).append(CRLF);
         }
 
-        // Body Part
         appendBody(message, email, mixedBoundary, alternativeBoundary);
 
-        // Attachments Part
         if (hasAttachments) {
             appendAttachments(message, email.attachments(), mixedBoundary);
             message.append("--").append(mixedBoundary).append("--").append(CRLF);
@@ -56,20 +52,17 @@ public class MimeMessage {
         if (email.htmlBody() != null) {
             message.append("Content-Type: multipart/alternative; boundary=").append(alternativeBoundary).append(CRLF).append(CRLF);
 
-            // Plain text part
             message.append("--").append(alternativeBoundary).append(CRLF);
             message.append("Content-Type: text/plain; charset=UTF-8").append(CRLF);
             message.append("Content-Transfer-Encoding: base64").append(CRLF).append(CRLF);
             message.append(Base64.getEncoder().encodeToString(email.messageBody().value().getBytes())).append(CRLF);
 
-            // HTML part
             message.append("--").append(alternativeBoundary).append(CRLF);
             message.append("Content-Type: text/html; charset=UTF-8").append(CRLF);
             message.append("Content-Transfer-Encoding: base64").append(CRLF).append(CRLF);
             message.append(Base64.getEncoder().encodeToString(email.htmlBody().getBytes())).append(CRLF);
             message.append("--").append(alternativeBoundary).append("--").append(CRLF);
         } else {
-            // Plain text only
             message.append("Content-Type: text/plain; charset=UTF-8").append(CRLF);
             message.append("Content-Transfer-Encoding: base64").append(CRLF).append(CRLF);
             message.append(Base64.getEncoder().encodeToString(email.messageBody().value().getBytes())).append(CRLF);

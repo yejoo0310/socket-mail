@@ -28,7 +28,6 @@ public class MainController {
         this.view = view;
         this.smtpService = new SmtpService();
 
-        // Add listeners
         this.view.getSendButton().addActionListener(new SendEmailListener());
         this.view.getAttachButton().addActionListener(new AttachFileListener());
     }
@@ -41,8 +40,8 @@ public class MainController {
                 Recipients recipients = new Recipients(toRaw);
 
                 String subject = view.getSubjectField().getText();
-                String textBody = view.getBodyEditor().getText(); // Use editor content as plain text fallback
-                htmlBody = view.getBodyEditor().getText(); // Also use editor content as HTML body
+                String textBody = view.getBodyEditor().getText();
+                htmlBody = view.getBodyEditor().getText();
                 String from = ConfigManager.getProperty("mail.smtp.user");
 
                 MessageBody messageBody = new MessageBody(textBody, "text/plain");
