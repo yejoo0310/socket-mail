@@ -10,7 +10,6 @@ public class MainView extends JFrame {
     private final JEditorPane bodyEditor;
     private final JButton sendButton;
     private final JButton attachButton;
-    private final JButton loadHtmlButton;
     private final JPanel attachmentPanel;
 
     public MainView() {
@@ -31,7 +30,6 @@ public class MainView extends JFrame {
         // Buttons
         sendButton = new JButton("Send");
         attachButton = new JButton("Attach File");
-        loadHtmlButton = new JButton("Load HTML");
 
         // Layout
         JPanel topPanel = new JPanel(new GridLayout(3, 2));
@@ -45,7 +43,6 @@ public class MainView extends JFrame {
         JPanel buttonPanel = new JPanel();
         buttonPanel.add(sendButton);
         buttonPanel.add(attachButton);
-        buttonPanel.add(loadHtmlButton);
 
         add(topPanel, BorderLayout.NORTH);
         add(bodyScrollPane, BorderLayout.CENTER);
@@ -73,9 +70,6 @@ public class MainView extends JFrame {
         return attachButton;
     }
 
-    public JButton getLoadHtmlButton() {
-        return loadHtmlButton;
-    }
 
     public JPanel getAttachmentPanel() {
         return attachmentPanel;

@@ -31,7 +31,6 @@ public class MainController {
         // Add listeners
         this.view.getSendButton().addActionListener(new SendEmailListener());
         this.view.getAttachButton().addActionListener(new AttachFileListener());
-        this.view.getLoadHtmlButton().addActionListener(new LoadHtmlListener());
     }
 
     class SendEmailListener implements ActionListener {
