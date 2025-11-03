@@ -24,7 +24,7 @@ public class MainView extends JFrame {
         attachmentPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 
         bodyEditor = new JEditorPane();
-        bodyEditor.setContentType("text/html");
+        bodyEditor.setContentType("text/plain");
         JScrollPane bodyScrollPane = new JScrollPane(bodyEditor);
 
         // Buttons

@@ -41,7 +41,7 @@ public class MainController {
 
                 String subject = view.getSubjectField().getText();
                 String textBody = view.getBodyEditor().getText();
-                htmlBody = view.getBodyEditor().getText();
+                htmlBody = null;
                 String from = ConfigManager.getProperty("mail.smtp.user");
 
                 MessageBody messageBody = new MessageBody(textBody, "text/plain");
